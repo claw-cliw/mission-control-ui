@@ -1,0 +1,22 @@
+{
+  "name": "mission-control-ui",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node api-server.js",
+    "dev": "node --watch api-server.js",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "convex": "^1.31.7",
+    "cors": "^2.8.6",
+    "express": "^4.22.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.2.1",
+    "vite": "^5.1.0"
+  }
+}
