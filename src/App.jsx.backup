@@ -60,15 +60,13 @@ export default function App() {
   const [reviews, setReviews] = useState([]);
   const [selectedAgent, setSelectedAgent] = useState(null);
   const [messagesOpen, setMessagesOpen] = useState(false);
-  const [messagesTaskId, setMessagesTaskId] = useState(null);
   const [taskMessages, setTaskMessages] = useState([]);
-  const [reviewTaskId, setReviewTaskId] = useState(null);
   const [allMessages, setAllMessages] = useState([]);
-  const [activityFilter, setActivityFilter] = useState('all');
 
   // Form
   const [newTitle, setNewTitle] = useState('');
   const [newDesc, setNewDesc] = useState('');
+  const [newEstimatedDuration, setNewEstimatedDuration] = useState('');
 
   const activitiesRef = useRef([]);
 
@@ -196,13 +194,16 @@ export default function App() {
       description: newDesc.trim(), 
       status: 'inbox' 
     };
+    if (newEstimatedDuration.trim()) {
+      body.estimatedDuration = newEstimatedDuration.trim();
+    }
     await apiFetch(`${API_URL}/api/tasks`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     });
-    addToast('✅ Task created! Scout will pick this up shortly.', 'create');
-    setNewTitle(''); setNewDesc(''); setCreateOpen(false);
+    addToast('Task created! Scout will pick this up shortly.', 'create');
+    setNewTitle(''); setNewDesc(''); setNewEstimatedDuration(''); setCreateOpen(false);
   };
 
   const updateStatus = async (id, status) => {
@@ -276,19 +277,15 @@ export default function App() {
   };
 
   const loadReviews = async (taskId) => {
-    setReviewTaskId(taskId);
     const res = await apiFetch(`${API_URL}/api/tasks/${taskId}/reviews`);
     setReviews(await res.json());
     setReviewOpen(true);
-    setSelectedTask(null); // Close task detail modal
   };
 
   const loadTaskMessages = async (taskId) => {
-    setMessagesTaskId(taskId);
     const res = await apiFetch(`${API_URL}/api/tasks/${taskId}/messages`);
     setTaskMessages(await res.json());
     setMessagesOpen(true);
-    setSelectedTask(null); // Close task detail modal
   };
 
   const submitReview = async (taskId, verdict, comment) => {
@@ -790,8 +787,8 @@ export default function App() {
                   {['all', 'tasks', 'claims', 'reviews'].map(f => (
                     <button 
                       key={f} 
-                      className={`filter-chip ${activityFilter === f ? 'active' : ''}`}
-                      onClick={() => setActivityFilter(f)}
+                      className="filter-chip"
+                      onClick={() => {}}
                     >
                       {f.charAt(0).toUpperCase() + f.slice(1)}
                     </button>
@@ -799,13 +796,7 @@ export default function App() {
                 </div>
                 
                 <div className="activity-timeline">
-                  {cleanActivities.filter(a => {
-                    if (activityFilter === 'all') return true;
-                    if (activityFilter === 'tasks') return a.type?.includes('task') || a.type === 'phase_transition';
-                    if (activityFilter === 'claims') return a.type === 'task_claimed';
-                    if (activityFilter === 'reviews') return a.type?.includes('review');
-                    return true;
-                  }).length === 0 && (
+                  {cleanActivities.length === 0 && (
                     <div className="empty-state">
                       <div className="empty-icon">◈</div>
                       <h3>No activity yet</h3>
@@ -813,13 +804,7 @@ export default function App() {
                     </div>
                   )}
                   
-                  {cleanActivities.filter(a => {
-                    if (activityFilter === 'all') return true;
-                    if (activityFilter === 'tasks') return a.type?.includes('task') || a.type === 'phase_transition';
-                    if (activityFilter === 'claims') return a.type === 'task_claimed';
-                    if (activityFilter === 'reviews') return a.type?.includes('review');
-                    return true;
-                  }).slice(0, 50).map((activity, i) => {
+                  {cleanActivities.slice(0, 50).map((activity, i) => {
                     const agent = activity.agentId ? getAgentById(activity.agentId) : null;
                     const isClaim = activity.type === 'task_claimed';
                     const isPhase = activity.type === 'phase_transition';
@@ -901,9 +886,7 @@ export default function App() {
                         <div className="thread-meta">
                           <span className="thread-time">{timeAgo(latestMsg?.createdAt)}</span>
                           {unreadCount > 0 && (
-                            <span className="thread-badge" title={`${unreadCount} unread messages`}>
-                              {unreadCount > 99 ? '99+' : unreadCount}
-                            </span>
+                            <span className="thread-badge">{unreadCount}</span>
                           )}
                         </div>
                       </div>
@@ -954,6 +937,13 @@ export default function App() {
                 value={newDesc} 
                 onChange={e => setNewDesc(e.target.value)} 
                 rows={3} 
+              />
+              <label>Estimated Duration</label>
+              <input 
+                className="input" 
+                placeholder="e.g., 2h, 3d, 1w" 
+                value={newEstimatedDuration} 
+                onChange={e => setNewEstimatedDuration(e.target.value)} 
               />
             </div>
             <div className="modal-footer">
@@ -1236,7 +1226,7 @@ export default function App() {
                   onClick={() => {
                     const verdict = document.getElementById('review-verdict').value;
                     const comment = document.getElementById('review-comment').value;
-                    if (reviewTaskId) submitReview(reviewTaskId, verdict, comment);
+                    if (selectedTask) submitReview(selectedTask.id, verdict, comment);
                     document.getElementById('review-comment').value = '';
                   }}
                 >
@@ -1318,12 +1308,8 @@ export default function App() {
                   <span className="stat-label">Reviews</span>
                 </div>
                 <div className="stat-card">
-                  <span className="stat-number" style={{color: '#22c55e'}}>{selectedAgent.stats?.praiseCount || 0}</span>
+                  <span className="stat-number">{selectedAgent.stats?.praiseCount || 0}</span>
                   <span className="stat-label">Praise</span>
-                </div>
-                <div className="stat-card">
-                  <span className="stat-number" style={{color: '#f59e0b'}}>{selectedAgent.stats?.critiqueCount || 0}</span>
-                  <span className="stat-label">Critique</span>
                 </div>
               </div>
 

@@ -1,0 +1,11 @@
+{
+  "$schema": "https://railway.com/schema.json",
+  "build": {
+    "builder": "NIXPACKS"
+  },
+  "deploy": {
+    "startCommand": "node api-server.js",
+    "restartPolicy": "ON_FAILURE",
+    "directory": "."
+  }
+}

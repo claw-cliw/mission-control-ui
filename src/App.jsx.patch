@@ -1,0 +1,5 @@
+// Add after line 5 (const API_TOKEN...)
+const apiFetch = (url, options = {}) => {
+  const separator = url.includes('?') ? '&' : '?';
+  return fetch(`${url}${separator}token=${API_TOKEN}`, options);
+};
