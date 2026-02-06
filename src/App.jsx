@@ -1025,8 +1025,16 @@ export default function App() {
                 ))}
               </div>
             </div>
-            <div className="modal-footer">
-              <button className="btn-secondary" onClick={() => setSelectedProject(null)}>Close</button>
+            <div className="modal-footer modal-footer-between">
+              <div className="footer-actions-left">
+                {selectedProject.status !== 'cancelled' && selectedProject.status !== 'done' && (
+                  <button className="btn-warning" onClick={() => { cancelTask(selectedProject.id); setSelectedProject(null); }}>Cancel</button>
+                )}
+              </div>
+              <div className="footer-actions-right">
+                <button className="btn-secondary" onClick={() => setSelectedProject(null)}>Close</button>
+                <button className="btn-danger" onClick={() => { deleteTaskWithConfirm(selectedProject.id); setSelectedProject(null); }}>Delete</button>
+              </div>
             </div>
           </div>
         </div>
