@@ -113,7 +113,7 @@ export default function App() {
     let es, timeout;
     const connect = () => {
       try {
-        es = new EventSource(`${API_URL}/api/events`);
+        es = new EventSource(`${API_URL}/api/events?token=${API_TOKEN}`);
         es.onopen = () => setConnected(true);
         es.addEventListener('connected', () => setConnected(true));
         es.addEventListener('agents', e => setAgents(JSON.parse(e.data)));
