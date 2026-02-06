@@ -60,13 +60,15 @@ export default function App() {
   const [reviews, setReviews] = useState([]);
   const [selectedAgent, setSelectedAgent] = useState(null);
   const [messagesOpen, setMessagesOpen] = useState(false);
+  const [messagesTaskId, setMessagesTaskId] = useState(null);
   const [taskMessages, setTaskMessages] = useState([]);
+  const [reviewTaskId, setReviewTaskId] = useState(null);
   const [allMessages, setAllMessages] = useState([]);
+  const [activityFilter, setActivityFilter] = useState('all');
 
   // Form
   const [newTitle, setNewTitle] = useState('');
   const [newDesc, setNewDesc] = useState('');
-  const [newEstimatedDuration, setNewEstimatedDuration] = useState('');
 
   const activitiesRef = useRef([]);
 
@@ -194,16 +196,13 @@ export default function App() {
       description: newDesc.trim(), 
       status: 'inbox' 
     };
-    if (newEstimatedDuration.trim()) {
-      body.estimatedDuration = newEstimatedDuration.trim();
-    }
     await apiFetch(`${API_URL}/api/tasks`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     });
-    addToast('Task created! Scout will pick this up shortly.', 'create');
-    setNewTitle(''); setNewDesc(''); setNewEstimatedDuration(''); setCreateOpen(false);
+    addToast('✅ Task created! Scout will pick this up shortly.', 'create');
+    setNewTitle(''); setNewDesc(''); setCreateOpen(false);
   };
 
   const updateStatus = async (id, status) => {
@@ -277,15 +276,19 @@ export default function App() {
   };
 
   const loadReviews = async (taskId) => {
+    setReviewTaskId(taskId);
     const res = await apiFetch(`${API_URL}/api/tasks/${taskId}/reviews`);
     setReviews(await res.json());
     setReviewOpen(true);
+    setSelectedTask(null); // Close task detail modal
   };
 
   const loadTaskMessages = async (taskId) => {
+    setMessagesTaskId(taskId);
     const res = await apiFetch(`${API_URL}/api/tasks/${taskId}/messages`);
     setTaskMessages(await res.json());
     setMessagesOpen(true);
+    setSelectedTask(null); // Close task detail modal
   };
 
   const submitReview = async (taskId, verdict, comment) => {
@@ -938,13 +941,6 @@ export default function App() {
                 onChange={e => setNewDesc(e.target.value)} 
                 rows={3} 
               />
-              <label>Estimated Duration</label>
-              <input 
-                className="input" 
-                placeholder="e.g., 2h, 3d, 1w" 
-                value={newEstimatedDuration} 
-                onChange={e => setNewEstimatedDuration(e.target.value)} 
-              />
             </div>
             <div className="modal-footer">
               <button className="btn-secondary" onClick={() => setCreateOpen(false)}>Cancel</button>
@@ -1226,7 +1222,7 @@ export default function App() {
                   onClick={() => {
                     const verdict = document.getElementById('review-verdict').value;
                     const comment = document.getElementById('review-comment').value;
-                    if (selectedTask) submitReview(selectedTask.id, verdict, comment);
+                    if (reviewTaskId) submitReview(reviewTaskId, verdict, comment);
                     document.getElementById('review-comment').value = '';
                   }}
                 >
