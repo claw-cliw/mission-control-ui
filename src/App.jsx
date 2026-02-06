@@ -276,19 +276,33 @@ export default function App() {
   };
 
   const loadReviews = async (taskId) => {
-    setReviewTaskId(taskId);
-    const res = await apiFetch(`${API_URL}/api/tasks/${taskId}/reviews`);
-    setReviews(await res.json());
-    setReviewOpen(true);
-    setSelectedTask(null); // Close task detail modal
+    try {
+      setReviewTaskId(taskId);
+      const res = await apiFetch(`${API_URL}/api/tasks/${taskId}/reviews`);
+      const data = await res.json();
+      setReviews(Array.isArray(data) ? data : []);
+      setReviewOpen(true);
+      // Delay closing task detail to ensure smooth transition
+      setTimeout(() => setSelectedTask(null), 100);
+    } catch (e) {
+      console.error('Failed to load reviews:', e);
+      setReviews([]);
+    }
   };
 
   const loadTaskMessages = async (taskId) => {
-    setMessagesTaskId(taskId);
-    const res = await apiFetch(`${API_URL}/api/tasks/${taskId}/messages`);
-    setTaskMessages(await res.json());
-    setMessagesOpen(true);
-    setSelectedTask(null); // Close task detail modal
+    try {
+      setMessagesTaskId(taskId);
+      const res = await apiFetch(`${API_URL}/api/tasks/${taskId}/messages`);
+      const data = await res.json();
+      setTaskMessages(Array.isArray(data) ? data : []);
+      setMessagesOpen(true);
+      // Delay closing task detail to ensure smooth transition
+      setTimeout(() => setSelectedTask(null), 100);
+    } catch (e) {
+      console.error('Failed to load messages:', e);
+      setTaskMessages([]);
+    }
   };
 
   const submitReview = async (taskId, verdict, comment) => {

@@ -761,6 +761,13 @@ body {
   color: var(--accent-light);
 }
 
+.filter-chip.active {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+  color: #0a0a0f;
+  font-weight: 600;
+}
+
 .activity-timeline {
   display: flex;
   flex-direction: column;
