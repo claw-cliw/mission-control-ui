@@ -992,7 +992,12 @@ export default function App() {
               <h3>Phase Timeline</h3>
               <div className="phase-list">
                 {getProjectPhases(selectedProject).map(p => (
-                  <div key={p.phase} className={`phase-item ${p.status}`}>
+                  <div 
+                    key={p.phase} 
+                    className={`phase-item ${p.status}`}
+                    onClick={() => p.task && setSelectedTask(p.task)}
+                    style={{cursor: p.task ? 'pointer' : 'default'}}
+                  >
                     <div className="phase-icon" style={{color: PHASE_COLORS[p.phase]}}>
                       {p.status === 'done' ? '✓' : p.status === 'in_progress' ? '●' : p.status === 'review' ? '◐' : '○'}
                     </div>
@@ -1009,7 +1014,12 @@ export default function App() {
                     </div>
                     <span className="phase-status">{p.status.replace('_', ' ')}</span>
                     {p.task?.status === 'done' && p.task?.outputPath && (
-                      <button className="btn-ghost btn-sm" onClick={() => viewTaskFile(p.task.id)}>View</button>
+                      <button 
+                        className="btn-ghost btn-sm" 
+                        onClick={(e) => { e.stopPropagation(); viewTaskFile(p.task.id); }}
+                      >
+                        View
+                      </button>
                     )}
                   </div>
                 ))}
