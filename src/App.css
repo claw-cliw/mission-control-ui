@@ -2063,3 +2063,388 @@ textarea.input {
     justify-content: flex-start;
   }
 }
+
+/* ============================================
+   SPRINT 3: Events Tab
+   ============================================ */
+
+.events-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.events-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.events-stats {
+  display: flex;
+  gap: 12px;
+}
+
+.stat-mini {
+  font-size: 12px;
+  color: #8b8b9a;
+  background: #1a1a24;
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+
+.event-stream {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.event-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 14px;
+  background: #12121a;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  transition: border-color 0.2s;
+}
+
+.event-row:hover {
+  border-color: #2a2a3a;
+}
+
+.event-icon {
+  font-size: 16px;
+  min-width: 24px;
+  text-align: center;
+  padding-top: 2px;
+}
+
+.event-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.event-type {
+  font-size: 12px;
+  font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+  margin-bottom: 2px;
+}
+
+.event-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 13px;
+  color: #8b8b9a;
+}
+
+.event-agent {
+  color: #a78bfa;
+}
+
+.event-task {
+  color: #60a5fa;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  transition: text-decoration-color 0.2s;
+}
+
+.event-task:hover {
+  text-decoration-color: #60a5fa;
+}
+
+.event-message {
+  color: #c4c4d4;
+}
+
+.event-detail {
+  color: #6b7280;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+}
+
+.event-verdict {
+  padding: 1px 8px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.event-verdict.approve {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+}
+
+.event-verdict.request_changes {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.event-time {
+  font-size: 11px;
+  color: #4b4b5a;
+  white-space: nowrap;
+  padding-top: 2px;
+}
+
+/* ============================================
+   SPRINT 3: Settings Tab
+   ============================================ */
+
+.settings-container {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #e4e4f0;
+  margin: 0;
+}
+
+.section-desc {
+  font-size: 13px;
+  color: #6b7280;
+  margin: -4px 0 4px;
+}
+
+/* Stats Overview */
+.stats-overview {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 12px;
+}
+
+.overview-stat {
+  background: #12121a;
+  border: 1px solid #1e1e28;
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.overview-value {
+  font-size: 28px;
+  font-weight: 800;
+  color: #e4e4f0;
+}
+
+.overview-label {
+  font-size: 12px;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Policies */
+.policy-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 12px;
+}
+
+.policy-card {
+  background: #12121a;
+  border: 1px solid #1e1e28;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.policy-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.policy-key {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: #818cf8;
+}
+
+.policy-desc {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.policy-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: #8b8b9a;
+  background: #0a0a12;
+  padding: 8px 12px;
+  border-radius: 8px;
+  margin: 0;
+  overflow-x: auto;
+}
+
+.policy-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.policy-input {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  resize: vertical;
+}
+
+.policy-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Triggers */
+.trigger-list, .reaction-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.trigger-card, .reaction-card {
+  background: #12121a;
+  border: 1px solid #1e1e28;
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: opacity 0.2s;
+}
+
+.trigger-card.disabled, .reaction-card.disabled {
+  opacity: 0.5;
+}
+
+.trigger-header, .reaction-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.trigger-name, .reaction-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: #e4e4f0;
+}
+
+.reaction-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.reaction-prob {
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.trigger-meta, .reaction-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.trigger-meta code, .reaction-meta code {
+  background: #1a1a24;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  color: #a78bfa;
+}
+
+.trigger-fired, .reaction-fired {
+  font-size: 11px;
+  color: #4b4b5a;
+}
+
+.reaction-template {
+  font-size: 12px;
+  color: #6b7280;
+  font-style: italic;
+  padding-left: 8px;
+  border-left: 2px solid #2a2a3a;
+}
+
+.reaction-type {
+  background: rgba(168, 85, 247, 0.15);
+  color: #a855f7;
+  padding: 1px 8px;
+  border-radius: 8px;
+  font-size: 11px;
+}
+
+/* Toggle Switch */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #2a2a3a;
+  transition: 0.3s;
+  border-radius: 20px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 14px;
+  width: 14px;
+  left: 3px;
+  bottom: 3px;
+  background-color: #6b7280;
+  transition: 0.3s;
+  border-radius: 50%;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background-color: #6366f1;
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+  transform: translateX(16px);
+  background-color: #fff;
+}
+
+.btn-sm {
+  font-size: 12px;
+  padding: 4px 10px;
+}

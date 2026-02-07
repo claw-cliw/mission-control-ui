@@ -30,8 +30,37 @@ const TABS = [
   { id: 'projects', label: 'Projects', icon: '◆' },
   { id: 'tasks', label: 'Tasks', icon: '◎' },
   { id: 'activity', label: 'Activity', icon: '◈' },
-  { id: 'messages', label: 'Messages', icon: '◉' }
+  { id: 'messages', label: 'Messages', icon: '◉' },
+  { id: 'events', label: 'Events', icon: '⚡' },
+  { id: 'settings', label: 'Settings', icon: '⚙' }
 ];
+
+// Agent emoji avatars
+const AGENT_EMOJI = {
+  Scout: '🔭',
+  Scribe: '📝',
+  Surveyor: '📐',
+  Forge: '⚒️',
+  Refiner: '🔍',
+  Marshal: '📋'
+};
+
+// Event type styling
+const EVENT_ICONS = {
+  'task.created': { icon: '📋', color: '#60a5fa' },
+  'task.claimed': { icon: '✋', color: '#a78bfa' },
+  'task.status_changed': { icon: '🔄', color: '#fbbf24' },
+  'task.stale_recovered': { icon: '⚠️', color: '#ef4444' },
+  'task.deleted': { icon: '🗑️', color: '#6b7280' },
+  'review.submitted': { icon: '⭐', color: '#f472b6' },
+  'message.created': { icon: '💬', color: '#34d399' },
+  'policy.updated': { icon: '⚙️', color: '#818cf8' },
+  'trigger.fired': { icon: '🎯', color: '#fb923c' },
+  'trigger.created': { icon: '➕', color: '#fb923c' },
+  'reaction.fired': { icon: '🎲', color: '#e879f9' },
+  'reaction.created': { icon: '➕', color: '#e879f9' },
+  'system.heartbeat': { icon: '💓', color: '#6b7280' },
+};
 
 export default function App() {
   const [agents, setAgents] = useState([]);
@@ -66,6 +95,16 @@ export default function App() {
   const [allMessages, setAllMessages] = useState([]);
   const [activityFilter, setActivityFilter] = useState('all');
 
+  // Sprint 3: Events, Policies, Triggers, Reactions
+  const [events, setEvents] = useState([]);
+  const [policies, setPolicies] = useState([]);
+  const [triggers, setTriggers] = useState([]);
+  const [reactions, setReactions] = useState([]);
+  const [eventFilter, setEventFilter] = useState('all');
+  const [editingPolicy, setEditingPolicy] = useState(null);
+  const [policyValue, setPolicyValue] = useState('');
+  const [systemStats, setSystemStats] = useState(null);
+
   // Form
   const [newTitle, setNewTitle] = useState('');
   const [newDesc, setNewDesc] = useState('');
@@ -88,20 +127,31 @@ export default function App() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [aRes, tRes, actRes, mRes] = await Promise.all([
+      const [aRes, tRes, actRes, mRes, evtRes, polRes, trgRes, rxnRes, statsRes] = await Promise.all([
         apiFetch(`${API_URL}/api/agents`),
         apiFetch(`${API_URL}/api/tasks`),
         apiFetch(`${API_URL}/api/activities`),
-        apiFetch(`${API_URL}/api/messages`)
+        apiFetch(`${API_URL}/api/messages`),
+        apiFetch(`${API_URL}/api/events/list`).catch(() => ({ json: () => [] })),
+        apiFetch(`${API_URL}/api/policies`).catch(() => ({ json: () => [] })),
+        apiFetch(`${API_URL}/api/triggers`).catch(() => ({ json: () => [] })),
+        apiFetch(`${API_URL}/api/reactions`).catch(() => ({ json: () => [] })),
+        apiFetch(`${API_URL}/api/admin/stats`).catch(() => ({ json: () => null })),
       ]);
       setAgents(await aRes.json());
       setTasks(await tRes.json());
       const act = await actRes.json();
       activitiesRef.current = act;
       setActivities(act);
-      // Defensive: ensure messages is an array
       const msgData = await mRes.json();
       setAllMessages(Array.isArray(msgData) ? msgData : []);
+      const evtData = await evtRes.json();
+      setEvents(Array.isArray(evtData) ? evtData : []);
+      const polData = await polRes.json();
+      setPolicies(Array.isArray(polData) ? polData : []);
+      setTriggers(await trgRes.json());
+      setReactions(await rxnRes.json());
+      setSystemStats(await statsRes.json());
       setLastUpdate(new Date());
     } catch (e) { console.error('Fetch error:', e); }
     setLoading(false);
@@ -136,6 +186,18 @@ export default function App() {
             addToast(activity.message, 'status');
           } else if (activity.type === 'task_cancelled') {
             addToast(activity.message, 'warning');
+          }
+        });
+        es.addEventListener('event', e => {
+          const evt = JSON.parse(e.data);
+          setEvents(prev => [evt, ...prev].slice(0, 100));
+          // Toast for interesting events
+          if (evt.type === 'trigger.fired') {
+            addToast(`🎯 Trigger: ${evt.data?.triggerName || 'fired'}`, 'info');
+          } else if (evt.type === 'reaction.fired') {
+            addToast(`🎲 ${evt.data?.targetAgent} reacted (${evt.data?.reactionType})`, 'info');
+          } else if (evt.type === 'task.stale_recovered') {
+            addToast(`⚠️ Stale task recovered: ${evt.data?.title}`, 'warning');
           }
         });
         es.onerror = () => { setConnected(false); es?.close(); timeout = setTimeout(connect, 5000); };
@@ -329,6 +391,41 @@ export default function App() {
     });
     alert('Changes requested.');
     loadReviews(id);
+  };
+
+  // Sprint 3: Policy update
+  const updatePolicy = async (key, value) => {
+    try {
+      await apiFetch(`${API_URL}/api/policies`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key, value })
+      });
+      addToast(`✅ Policy "${key}" updated`, 'create');
+      setEditingPolicy(null);
+      fetchData();
+    } catch (e) {
+      addToast(`❌ Failed to update policy: ${e.message}`, 'warning');
+    }
+  };
+
+  // Sprint 3: Toggle trigger/reaction enabled
+  const toggleTrigger = async (id, enabled) => {
+    await apiFetch(`${API_URL}/api/triggers/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled })
+    });
+    fetchData();
+  };
+
+  const toggleReaction = async (id, enabled) => {
+    await apiFetch(`${API_URL}/api/reactions/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled })
+    });
+    fetchData();
   };
 
   const resetTask = (id) => {
@@ -542,7 +639,7 @@ export default function App() {
                   className={`agent-card ${isActive ? 'active' : isWaiting ? 'waiting' : 'idle'}`}
                   onClick={() => setSelectedAgent(agent)}
                 >
-                  <div className="agent-avatar">{agent.name[0]}</div>
+                  <div className="agent-avatar">{AGENT_EMOJI[agent.name] || agent.name[0]}</div>
                   <div className="agent-info">
                     <div className="agent-name">{agent.name}</div>
                     <div className="agent-role">{agent.role}</div>
@@ -924,6 +1021,204 @@ export default function App() {
                     </div>
                   );
                 })}
+              </div>
+            )}
+            {/* Events Tab */}
+            {activeTab === 'events' && (
+              <div className="events-container">
+                <div className="events-header-row">
+                  <div className="activity-filters">
+                    {['all', 'tasks', 'reviews', 'triggers', 'reactions', 'system'].map(f => (
+                      <button 
+                        key={f} 
+                        className={`filter-chip ${eventFilter === f ? 'active' : ''}`}
+                        onClick={() => setEventFilter(f)}
+                      >
+                        {f.charAt(0).toUpperCase() + f.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                  {systemStats && (
+                    <div className="events-stats">
+                      <span className="stat-mini">⚡ {systemStats.events?.last24h || 0} events/24h</span>
+                      <span className="stat-mini">📋 {systemStats.tasks?.total || 0} tasks</span>
+                      <span className="stat-mini">🤖 {systemStats.agents?.total || 0} agents</span>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="event-stream">
+                  {events.filter(e => {
+                    if (eventFilter === 'all') return true;
+                    if (eventFilter === 'tasks') return e.type?.startsWith('task.');
+                    if (eventFilter === 'reviews') return e.type?.startsWith('review.');
+                    if (eventFilter === 'triggers') return e.type?.startsWith('trigger.');
+                    if (eventFilter === 'reactions') return e.type?.startsWith('reaction.');
+                    if (eventFilter === 'system') return e.type?.startsWith('system.') || e.type?.startsWith('policy.');
+                    return true;
+                  }).length === 0 && (
+                    <div className="empty-state">
+                      <div className="empty-icon">⚡</div>
+                      <h3>No events yet</h3>
+                      <p>Events will stream here as the system operates</p>
+                    </div>
+                  )}
+                  
+                  {events.filter(e => {
+                    if (eventFilter === 'all') return true;
+                    if (eventFilter === 'tasks') return e.type?.startsWith('task.');
+                    if (eventFilter === 'reviews') return e.type?.startsWith('review.');
+                    if (eventFilter === 'triggers') return e.type?.startsWith('trigger.');
+                    if (eventFilter === 'reactions') return e.type?.startsWith('reaction.');
+                    if (eventFilter === 'system') return e.type?.startsWith('system.') || e.type?.startsWith('policy.');
+                    return true;
+                  }).slice(0, 100).map((evt, i) => {
+                    const style = EVENT_ICONS[evt.type] || { icon: '●', color: '#6b7280' };
+                    const agent = evt.agentId ? getAgentById(evt.agentId) : null;
+                    const task = evt.taskId ? tasks.find(t => t.id === evt.taskId) : null;
+                    
+                    return (
+                      <div key={evt.id || i} className="event-row">
+                        <div className="event-icon" style={{ color: style.color }}>{style.icon}</div>
+                        <div className="event-body">
+                          <div className="event-type" style={{ color: style.color }}>{evt.type}</div>
+                          <div className="event-details">
+                            {agent && <span className="event-agent">{AGENT_EMOJI[agent.name] || '🤖'} {agent.name}</span>}
+                            {task && <span className="event-task" onClick={() => setSelectedTask(task)} style={{cursor:'pointer'}}>📋 {task.title}</span>}
+                            {evt.data?.message && <span className="event-message">{evt.data.message}</span>}
+                            {evt.data?.triggerName && !evt.data?.message && <span className="event-detail">trigger: {evt.data.triggerName}</span>}
+                            {evt.data?.reactionName && <span className="event-detail">reaction: {evt.data.reactionName} → {evt.data.targetAgent}</span>}
+                            {evt.data?.verdict && <span className={`event-verdict ${evt.data.verdict}`}>{evt.data.verdict}</span>}
+                            {evt.data?.from && evt.data?.to && <span className="event-detail">{evt.data.from} → {evt.data.to}</span>}
+                            {evt.data?.key && <span className="event-detail">policy: {evt.data.key}</span>}
+                          </div>
+                        </div>
+                        <div className="event-time">{timeAgo(evt.createdAt)}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Settings Tab — Policies, Triggers, Reactions */}
+            {activeTab === 'settings' && (
+              <div className="settings-container">
+                {/* System Overview */}
+                {systemStats && (
+                  <div className="settings-section">
+                    <h3 className="section-title">📊 System Overview</h3>
+                    <div className="stats-overview">
+                      <div className="overview-stat"><span className="overview-value">{systemStats.agents?.total}</span><span className="overview-label">Agents</span></div>
+                      <div className="overview-stat"><span className="overview-value">{systemStats.tasks?.total}</span><span className="overview-label">Tasks</span></div>
+                      <div className="overview-stat"><span className="overview-value">{systemStats.events?.last24h}</span><span className="overview-label">Events/24h</span></div>
+                      <div className="overview-stat"><span className="overview-value">{systemStats.policies}</span><span className="overview-label">Policies</span></div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Policies */}
+                <div className="settings-section">
+                  <h3 className="section-title">⚙️ Policies</h3>
+                  <p className="section-desc">Runtime configuration — change behavior without redeploying</p>
+                  <div className="policy-grid">
+                    {policies.map(p => (
+                      <div key={p.key || p.id} className="policy-card">
+                        <div className="policy-header">
+                          <span className="policy-key">{p.key}</span>
+                          <button 
+                            className="btn-ghost btn-sm"
+                            onClick={() => {
+                              setEditingPolicy(p.key);
+                              setPolicyValue(JSON.stringify(p.value, null, 2));
+                            }}
+                          >
+                            Edit
+                          </button>
+                        </div>
+                        <div className="policy-desc">{p.description || '—'}</div>
+                        {editingPolicy === p.key ? (
+                          <div className="policy-edit">
+                            <textarea 
+                              className="input policy-input" 
+                              value={policyValue} 
+                              onChange={e => setPolicyValue(e.target.value)}
+                              rows={3}
+                            />
+                            <div className="policy-actions">
+                              <button className="btn-primary btn-sm" onClick={() => {
+                                try {
+                                  updatePolicy(p.key, JSON.parse(policyValue));
+                                } catch (e) { addToast('Invalid JSON', 'warning'); }
+                              }}>Save</button>
+                              <button className="btn-secondary btn-sm" onClick={() => setEditingPolicy(null)}>Cancel</button>
+                            </div>
+                          </div>
+                        ) : (
+                          <pre className="policy-value">{JSON.stringify(p.value, null, 2)}</pre>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Triggers */}
+                <div className="settings-section">
+                  <h3 className="section-title">🎯 Triggers ({triggers.length})</h3>
+                  <p className="section-desc">Auto-fire actions when conditions are met</p>
+                  <div className="trigger-list">
+                    {(Array.isArray(triggers) ? triggers : []).map(t => (
+                      <div key={t.id} className={`trigger-card ${t.enabled ? '' : 'disabled'}`}>
+                        <div className="trigger-header">
+                          <span className="trigger-name">{t.name}</span>
+                          <label className="toggle-switch">
+                            <input type="checkbox" checked={t.enabled} onChange={() => toggleTrigger(t.id, !t.enabled)} />
+                            <span className="toggle-slider"></span>
+                          </label>
+                        </div>
+                        <div className="trigger-meta">
+                          <span className="trigger-event">on: <code>{t.eventType}</code></span>
+                          {t.condition && <span className="trigger-condition">if: <code>{t.condition}</code></span>}
+                          <span className="trigger-action">→ <code>{t.actionType}</code></span>
+                          {t.cooldownMs > 0 && <span className="trigger-cooldown">⏱ {formatDuration(t.cooldownMs)}</span>}
+                        </div>
+                        {t.lastFiredAt && <div className="trigger-fired">Last fired: {timeAgo(t.lastFiredAt)}</div>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Reactions */}
+                <div className="settings-section">
+                  <h3 className="section-title">🎲 Reaction Matrix ({reactions.length})</h3>
+                  <p className="section-desc">Probabilistic inter-agent responses to events</p>
+                  <div className="reaction-list">
+                    {(Array.isArray(reactions) ? reactions : []).map(r => (
+                      <div key={r.id} className={`reaction-card ${r.enabled ? '' : 'disabled'}`}>
+                        <div className="reaction-header">
+                          <span className="reaction-name">{r.name}</span>
+                          <div className="reaction-right">
+                            <span className="reaction-prob" style={{
+                              color: r.probability >= 0.8 ? '#22c55e' : r.probability >= 0.5 ? '#fbbf24' : '#6b7280'
+                            }}>{Math.round(r.probability * 100)}%</span>
+                            <label className="toggle-switch">
+                              <input type="checkbox" checked={r.enabled} onChange={() => toggleReaction(r.id, !r.enabled)} />
+                              <span className="toggle-slider"></span>
+                            </label>
+                          </div>
+                        </div>
+                        <div className="reaction-meta">
+                          <span>on: <code>{r.sourceEvent}</code></span>
+                          <span>→ {AGENT_EMOJI[r.targetAgentName] || '🤖'} <strong>{r.targetAgentName}</strong></span>
+                          <span className="reaction-type">{r.reactionType}</span>
+                          {r.cooldownMs > 0 && <span>⏱ {formatDuration(r.cooldownMs)}</span>}
+                        </div>
+                        {r.messageTemplate && <div className="reaction-template">"{r.messageTemplate}"</div>}
+                        {r.lastFiredAt && <div className="reaction-fired">Last fired: {timeAgo(r.lastFiredAt)}</div>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
           </div>
