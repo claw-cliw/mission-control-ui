@@ -584,8 +584,20 @@ export default function App() {
       <header className="header">
         <div className="header-left">
           <div className="logo">
-            <span className="logo-icon">◆</span>
+            <span className="logo-icon">⌘</span>
             <span className="logo-text">Mission Control</span>
+          </div>
+          <div style={{
+            fontSize: '10px',
+            fontWeight: '600',
+            color: '#6366f1',
+            background: 'rgba(99, 102, 241, 0.1)',
+            padding: '2px 8px',
+            borderRadius: '999px',
+            border: '1px solid rgba(99, 102, 241, 0.2)',
+            marginLeft: '8px'
+          }}>
+            v4.0
           </div>
         </div>
         
@@ -596,12 +608,12 @@ export default function App() {
             <span className="stat-label">Active</span>
           </div>
           <div className="stat-pill">
-            <span className="stat-dot" style={{background: '#22c55e'}}></span>
+            <span className="stat-dot" style={{background: '#10b981'}}></span>
             <span className="stat-value">{stats.completed}</span>
             <span className="stat-label">Done</span>
           </div>
           <div className="stat-pill">
-            <span className="stat-dot" style={{background: '#fbbf24'}}></span>
+            <span className="stat-dot" style={{background: '#f59e0b'}}></span>
             <span className="stat-value">{stats.claimedToday}</span>
             <span className="stat-label">Today</span>
           </div>
@@ -673,11 +685,12 @@ export default function App() {
         <main className="main">
           {/* Tabs */}
           <div className="tabs">
-            {TABS.map(tab => (
+            {TABS.map((tab, idx) => (
               <button
                 key={tab.id}
                 className={`tab ${activeTab === tab.id ? 'active' : ''}`}
                 onClick={() => setActiveTab(tab.id)}
+                title={`${tab.label} (⌘${idx + 1})`}
               >
                 <span className="tab-icon">{tab.icon}</span>
                 <span className="tab-label">{tab.label}</span>
@@ -703,11 +716,15 @@ export default function App() {
                   const currentPhase = phases.find(p => p.status === 'in_progress' || p.status === 'review');
                   const currentPhaseName = currentPhase ? PHASE_LABELS[currentPhase.phase] : (progress === 100 ? 'Complete' : 'Not started');
                   const activePhaseAssignees = currentPhase?.task?.assigneeIds || [];
+                  const currentAgent = activePhaseAssignees.length > 0 ? getAgentById(activePhaseAssignees[0]) : null;
                   
                   return (
                     <div key={project.id} className="project-card">
                       <div className="project-header">
-                        <h3 className="project-title">{project.title}</h3>
+                        <h3 className="project-title">
+                          {currentAgent && <span style={{marginRight: '6px'}}>{AGENT_EMOJI[currentAgent.name]}</span>}
+                          {project.title}
+                        </h3>
                         <div className="project-progress">{progress}%</div>
                       </div>
                       
@@ -951,7 +968,7 @@ export default function App() {
                       >
                         <div className="timeline-marker">
                           <div className={`timeline-icon ${isClaim ? 'claim' : isPhase ? 'phase' : ''}`}>
-                            {icon}
+                            {agent && AGENT_EMOJI[agent.name] ? AGENT_EMOJI[agent.name] : icon}
                           </div>
                           {i < cleanActivities.length - 1 && <div className="timeline-line"></div>}
                         </div>
@@ -1229,10 +1246,10 @@ export default function App() {
       <footer className="footer">
         <div className="footer-left">
           <span className={`connection-dot ${connected ? 'online' : 'offline'}`}></span>
-          <span className="connection-text">{connected ? 'Connected' : 'Reconnecting...'}</span>
+          <span>{connected ? 'Live' : 'Reconnecting'}</span>
         </div>
         <div className="footer-right">
-          <span>Last update: {formatTime(lastUpdate.getTime())}</span>
+          <span>{formatTime(lastUpdate.getTime())}</span>
         </div>
       </footer>
 
